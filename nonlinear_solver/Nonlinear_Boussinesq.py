@@ -67,8 +67,10 @@ class NonlinearBoussinesq:
         self.pnph = 0.5 * (self.pn + self.pnp1)
 
         # Setting up the normal vector, buoyancy frequency, coriolis parameter and time step.
-        self.n = FacetNormal(self.mesh)
+        self.n = FacetNormal(self.mesh) # outward normal vector
+        self.unn = 0.5*(dot(self.un, self.n) + abs(dot(self.un, self.n))) # upwinding variable.
         self.k = as_vector([0, 0, 1])
+        # Setting up the Coriolis parameter
         Omega = 7.292e-5
         theta = pi / 3
         self.omega = as_vector([0, Omega * sin(theta), Omega * cos(theta)])
@@ -81,8 +83,8 @@ class NonlinearBoussinesq:
         U = Constant(self.U)
         un, bn, pn = self.Un.subfunctions
         unp1, bnp1, pnp1 = self.Unp1.subfunctions
-        un.project(as_vector([Constant(0.0),Constant(0.0),Constant(0.0)]))
-        unp1.project(as_vector([Constant(0.0),Constant(0.0),Constant(0.0)]))
+        un.project(as_vector([U,Constant(0.0),Constant(0.0)]))
+        unp1.project(as_vector([U,Constant(0.0),Constant(0.0)]))
         # Solve the equation for the whole variable instead of only the perturbed variable.
         bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * self.z)
         bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * self.z)
@@ -173,10 +175,12 @@ class NonlinearBoussinesq:
         unp1, pnp1, bnp1 = self.unp1, self.pnp1, self.bnp1
         unph, pnph, bnph = self.unph, self.pnph, self.bnph
         w, phi, q = self.w, self.phi, self.q
+        unn = self.unn
         k = self.k
         dt = self.dt
         N = self.N
         omega = self.omega
+        Ubar = as_vector([Constant(self.U), 0, 0])
         def u_eqn(w):
             return (
                 inner(w, (unp1 - un)) * dx +
@@ -187,7 +191,9 @@ class NonlinearBoussinesq:
         def b_eqn(q):
             return (
                 q * (bnp1 - bn) * dx +
-                dt * N**2 * q * inner(k, unph) * dx
+                dt * N**2 * q * inner(k, unph) * dx -
+                dt * div(q * Ubar) * bnph * dx +
+                dt * jump(q) * (unn('+') * bnph('+') - unn('-') * bnph('-')) * (dS_v + dS_h)
             )
 
         def p_eqn(phi):
