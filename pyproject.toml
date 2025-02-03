@@ -1,0 +1,11 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "Nonlinear_Boussinesq"
+version = "0.1"
+dependencies = ["numpy", "firedrake", "matplotlib"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["Nonlinear_Boussinesq"]
