@@ -68,7 +68,8 @@ class NonlinearBoussinesq:
 
         # Setting up the normal vector, buoyancy frequency, coriolis parameter and time step.
         self.n = FacetNormal(self.mesh) # outward normal vector
-        self.unn = 0.5*(dot(self.un, self.n) + abs(dot(self.un, self.n))) # upwinding variable.
+        Ubar = as_vector([Constant(self.U), 0, 0]) # TODO: need to check this.
+        self.unn = 0.5*(dot(Ubar, self.n) + abs(dot(Ubar, self.n))) # upwinding variable.
         self.k = as_vector([0, 0, 1])
         # Setting up the Coriolis parameter
         Omega = 7.292e-5
@@ -183,17 +184,19 @@ class NonlinearBoussinesq:
         Ubar = as_vector([Constant(self.U), 0, 0])
         def u_eqn(w):
             return (
-                inner(w, (unp1 - un)) * dx +
-                dt * inner(w, 2 * cross(omega, unph)) * dx -
-                dt * div(w) * pnph * dx - dt * inner(w, k) * bnph * dx
+                inner(w, (unp1 - un)) * dx
+                # - dt * inner(grad(w), outer(unph, unph)) * dx
+                # + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
+                + dt * inner(w, 2 * cross(omega, unph)) * dx 
+                - dt * div(w) * pnph * dx - dt * inner(w, k) * bnph * dx
             )
 
         def b_eqn(q):
             return (
-                q * (bnp1 - bn) * dx +
-                dt * N**2 * q * inner(k, unph) * dx -
-                dt * div(q * Ubar) * bnph * dx +
-                dt * jump(q) * (unn('+') * bnph('+') - unn('-') * bnph('-')) * (dS_v + dS_h)
+                q * (bnp1 - bn) * dx
+                # + dt * N**2 * q * inner(k, unph) * dx
+                - dt * div(q * unph) * bnph * dx 
+                + dt * jump(q) * (unn('+') * bnph('+') - unn('-') * bnph('-')) * (dS_v + dS_h)
             )
 
         def p_eqn(phi):
@@ -292,5 +295,5 @@ if __name__ == "__main__":
     # eqn.build_pure_Vanka_params()
     eqn.build_boundary_condition()
     eqn.build_NonlinearVariationalSolver()
-    eqn.time_stepping(tmax=tmax, dt=dt, monitor=True)
+    eqn.time_stepping(tmax=tmax, dt=dt, monitor=False)
     print("The simulation is completed.")
