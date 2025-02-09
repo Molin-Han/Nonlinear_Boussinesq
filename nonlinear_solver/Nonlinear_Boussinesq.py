@@ -68,8 +68,7 @@ class NonlinearBoussinesq:
 
         # Setting up the normal vector, buoyancy frequency, coriolis parameter and time step.
         self.n = FacetNormal(self.mesh) # outward normal vector
-        Ubar = as_vector([Constant(self.U), 0, 0]) # TODO: need to check this.
-        self.unn = 0.5*(dot(Ubar, self.n) + abs(dot(Ubar, self.n))) # upwinding variable.
+        self.unn = 0.5*(dot(self.unph, self.n) + abs(dot(self.unph, self.n))) # upwinding variable.
         self.k = as_vector([0, 0, 1])
         # Setting up the Coriolis parameter
         Omega = 7.292e-5
@@ -185,8 +184,8 @@ class NonlinearBoussinesq:
         def u_eqn(w):
             return (
                 inner(w, (unp1 - un)) * dx
-                # - dt * inner(grad(w), outer(unph, unph)) * dx
-                # + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
+                - dt * inner(div(outer(unph, w)), unph) * dx
+                + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
                 + dt * inner(w, 2 * cross(omega, unph)) * dx 
                 - dt * div(w) * pnph * dx - dt * inner(w, k) * bnph * dx
             )
