@@ -112,6 +112,8 @@ class NonlinearBoussinesq:
             'snes_monitor': None,
             # 'snes_type':'ksponly',
             'ksp_monitor': None,
+            # 'ksp_atol': 0,
+            # 'ksp_rtol': 1e-8,
             # "ksp_monitor_true_residual": None,
             'pc_type': 'mg',
             'pc_mg_type': 'full',
@@ -193,7 +195,7 @@ class NonlinearBoussinesq:
         def b_eqn(q):
             return (
                 q * (bnp1 - bn) * dx
-                # + dt * N**2 * q * inner(k, unph) * dx
+                + dt * N**2 * q * inner(k, unph) * dx #TODO: WHYYYYYYYYY??
                 - dt * div(q * unph) * bnph * dx 
                 + dt * jump(q) * (unn('+') * bnph('+') - unn('-') * bnph('-')) * (dS_v + dS_h)
             )
@@ -280,12 +282,12 @@ if __name__ == "__main__":
     U=0.
     dt=600.0
     tmax = 6000.0
-    nx=30
+    nx=90
     ny=1
     Lx=3.0e5
     Ly=1.0e-3 * Lx
     height=1e4
-    nlayers=10
+    nlayers=30
 
     eqn = NonlinearBoussinesq(N=N, U=U, dt=dt, nx=nx, ny=ny, Lx=Lx, Ly=Ly, height=height, nlayers=nlayers)
     eqn.build_initial_data()
