@@ -86,19 +86,19 @@ class NonlinearBoussinesq:
         un.project(as_vector([U,Constant(0.0),Constant(0.0)]))
         unp1.project(as_vector([U,Constant(0.0),Constant(0.0)]))
         # Solve the equation for the whole variable instead of only the perturbed variable.
-        bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * self.z)
-        bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * self.z)
+        bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
+        bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
 
         # Project the hydrostatic pressure as initial guess.
         DG = FunctionSpace(self.mesh, 'DG', 0)
         One = Function(DG).assign(1.0)
         area = assemble(One*dx)
-        pn.project(0.5 * self.N**2 * self.z**2)
-        pnp1.project(0.5 * self.N**2 * self.z**2)
-        pn_int = assemble(pn*dx)
-        pn.project(pn - pn_int/area)
-        pnp1_int = assemble(pnp1*dx)
-        pnp1.project(pnp1 - pnp1_int/area)
+        pn.project(0.5 * self.N**2 * (self.z-self.height/2)**2)
+        pnp1.project(0.5 * self.N**2 * (self.z-self.height/2)**2)
+        # pn_int = assemble(pn*dx)
+        # pn.project(pn - pn_int/area)
+        # pnp1_int = assemble(pnp1*dx)
+        # pnp1.project(pnp1 - pnp1_int/area)
         print("Calulated hydrostatic pressure as initial guess and satisfies the pressure condition.")
 
 
@@ -189,20 +189,20 @@ class NonlinearBoussinesq:
                 - dt * inner(div(outer(unph, w)), unph) * dx
                 + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
                 + dt * inner(w, 2 * cross(omega, unph)) * dx 
-                - dt * div(w) * pnph * dx - dt * inner(w, k) * bnph * dx
+                - dt * div(w) * pnp1 * dx - dt * inner(w, k) * bnph * dx
             )
 
         def b_eqn(q):
             return (
                 q * (bnp1 - bn) * dx
-                + dt * N**2 * q * inner(k, unph) * dx #TODO: WHYYYYYYYYY??
+                # + dt * N**2 * q * inner(k, unph) * dx #TODO: WHYYYYYYYYY??
                 - dt * div(q * unph) * bnph * dx 
                 + dt * jump(q) * (unn('+') * bnph('+') - unn('-') * bnph('-')) * (dS_v + dS_h)
             )
 
         def p_eqn(phi):
             return (
-                phi * div(unph) * dx
+                phi * div(unp1) * dx
             )
 
         eqn = u_eqn(w) + b_eqn(q) + p_eqn(phi)
@@ -282,12 +282,12 @@ if __name__ == "__main__":
     U=0.
     dt=600.0
     tmax = 6000.0
-    nx=90
+    nx=30
     ny=1
     Lx=3.0e5
     Ly=1.0e-3 * Lx
     height=1e4
-    nlayers=30
+    nlayers=10
 
     eqn = NonlinearBoussinesq(N=N, U=U, dt=dt, nx=nx, ny=ny, Lx=Lx, Ly=Ly, height=height, nlayers=nlayers)
     eqn.build_initial_data()
