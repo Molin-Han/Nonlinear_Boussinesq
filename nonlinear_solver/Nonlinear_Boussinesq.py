@@ -233,7 +233,7 @@ class NonlinearBoussinesq:
         Unp1.assign(Un)
 
         t = 0.0
-        dumpt = 600.
+        dumpt = dt
         tdump = 0.
         self.dt.assign(dt)
         print('tmax=', tmax, 'dt=', self.dt)
@@ -280,8 +280,8 @@ class NonlinearBoussinesq:
 if __name__ == "__main__":
     N=1.0e-2
     U=0.
-    dt=600.0
-    tmax = 6000.0
+    dt=100.0
+    tmax = 1000.0
     nx=30
     ny=1
     Lx=3.0e5
