@@ -281,13 +281,13 @@ if __name__ == "__main__":
     N=1.0e-2
     U=0.
     dt=100.0
-    tmax = 1000.0
-    nx=30
+    tmax = 3000.0
+    nx=300
     ny=1
     Lx=3.0e5
     Ly=1.0e-3 * Lx
     height=1e4
-    nlayers=10
+    nlayers=30
 
     eqn = NonlinearBoussinesq(N=N, U=U, dt=dt, nx=nx, ny=ny, Lx=Lx, Ly=Ly, height=height, nlayers=nlayers)
     eqn.build_initial_data()
