@@ -184,6 +184,7 @@ class NonlinearBoussinesq:
         omega = self.omega
         Ubar = as_vector([Constant(self.U), 0, 0])
         def u_eqn(w):
+            # TODO: Need to check this term by term
             return (
                 inner(w, (unp1 - un)) * dx
                 - dt * inner(div(outer(unph, w)), unph) * dx
