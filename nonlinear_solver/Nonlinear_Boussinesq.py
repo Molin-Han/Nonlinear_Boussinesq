@@ -86,19 +86,23 @@ class NonlinearBoussinesq:
         un.project(as_vector([U,Constant(0.0),Constant(0.0)]))
         unp1.project(as_vector([U,Constant(0.0),Constant(0.0)]))
         # Solve the equation for the whole variable instead of only the perturbed variable.
-        bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
-        bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
-
+        # TODO: Check the hydrostatic buoyancy and pressure.
+        # bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
+        # bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z-self.height/2))
+        bn.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z))
+        bnp1.project(sin(pi*self.z/self.height)/(1+((self.x-xc)**2+(self.y-yc)**2)/a**2) + self.N**2 * (self.z))
         # Project the hydrostatic pressure as initial guess.
         DG = FunctionSpace(self.mesh, 'DG', 0)
         One = Function(DG).assign(1.0)
         area = assemble(One*dx)
-        pn.project(0.5 * self.N**2 * (self.z-self.height/2)**2)
-        pnp1.project(0.5 * self.N**2 * (self.z-self.height/2)**2)
-        # pn_int = assemble(pn*dx)
-        # pn.project(pn - pn_int/area)
-        # pnp1_int = assemble(pnp1*dx)
-        # pnp1.project(pnp1 - pnp1_int/area)
+        # pn.project(0.5 * self.N**2 * (self.z-self.height/2)**2) #TODO: this seems to be incorrect
+        # pnp1.project(0.5 * self.N**2 * (self.z-self.height/2)**2)
+        pn.project(0.5 * self.N**2 * self.z**2)
+        pnp1.project(0.5 * self.N**2 * self.z**2)
+        pn_int = assemble(pn*dx)
+        pn.project(pn - pn_int/area)
+        pnp1_int = assemble(pnp1*dx)
+        pnp1.project(pnp1 - pnp1_int/area)
         print("Calulated hydrostatic pressure as initial guess and satisfies the pressure condition.")
 
 
@@ -187,10 +191,10 @@ class NonlinearBoussinesq:
             # TODO: Need to check this term by term
             return (
                 inner(w, (unp1 - un)) * dx
-                - dt * inner(div(outer(unph, w)), unph) * dx
-                + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
+                # - dt * inner(div(outer(unph, w)), unph) * dx
+                # + dt * dot(jump(w), unn('+') * unph('+') - unn('-') * unph('-')) * (dS_v + dS_h)
                 + dt * inner(w, 2 * cross(omega, unph)) * dx 
-                - dt * div(w) * pnp1 * dx - dt * inner(w, k) * bnph * dx
+                - dt * div(w) * pnph * dx - dt * inner(w, k) * bnph * dx
             )
 
         def b_eqn(q):
@@ -203,7 +207,7 @@ class NonlinearBoussinesq:
 
         def p_eqn(phi):
             return (
-                phi * div(unp1) * dx
+                phi * div(unph) * dx
             )
 
         eqn = u_eqn(w) + b_eqn(q) + p_eqn(phi)
